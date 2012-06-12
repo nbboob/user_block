@@ -1,0 +1,119 @@
+<?php
+// $Id: user_picture_block.module,v 1.11 2011/02/23 10:48:05 boran Exp $
+
+
+/**
+ * Helper functions
+ */
+
+/**
+ * Lookup the Users's title (=level) directly from the DB
+ * as the user_title* functions user_titles_get_user_title() and
+ * user_titles_get_user_title_info() dont work correctly for me..
+ * Only needed if user_title module is enabled.
+ */
+function user_block_getusertitle($uid) {
+  //user_titles_get_user_image()
+  $result = array();
+  $q = 'select title FROM {user_titles} left join {user_titles_users} on user_titles.tid=user_titles_users.tid where uid = :uid';
+  //watchdog('user_block', $q . $uid);
+  $query = db_query($q, array(':uid'=>$uid));
+  foreach ($query as $row) {
+    $result[] = $row->title;     // really only care about the first row
+  }
+  if (isset($result[0]['title']) ) {
+    return ($result[0]['title']);
+  }
+}
+
+
+/**
+ * Implementation of hook_init().
+ */
+function user_block_init() {
+  //$_moduleName_='user_block';
+  //drupal_add_css(drupal_get_path('module', $_moduleName_) . '/' . $_moduleName_  . '.css');
+  drupal_add_css(drupal_get_path('module', 'user_block') . '/user_block.css');
+}
+
+
+/**
+ * Implements hook_block_info().
+ */
+function user_block_block_info() {
+  $_moduleName_='user_block';
+  $blocks = array();
+  $blocks['user-block']['info'] =  t(ucfirst($_moduleName_));
+  $blocks['user-block']['cache'] = DRUPAL_NO_CACHE;   // maybe CACHE_PER_USER ?
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function user_block_block_view($delta) {
+  global  $base_path, $base_url, $language;
+  $uid=-1;
+  if ( arg(0) == 'node' and is_numeric(arg(1)) and arg(2) == FALSE ) {
+  	$node=node_load(arg(1));
+  	$uid=($node->uid);
+  }
+  if ($uid < 1) { 
+  	 return false;
+  }
+  $user=user_load($uid);
+  $_moduleName_='user_block';
+  $block = array();
+  $block['subject']=t('Submitted by');
+
+  $img_prefix=$base_url . "/" . variable_get('file_public_path', conf_path() . '/files');
+
+  // create block content for normal viewing
+  $block['content'] = "<div class=$_moduleName_>";
+
+  
+
+  $variables['account'] = $user;
+  $variables['user_picture'] = '';
+  template_preprocess_user_picture($variables);
+  //$block['content'] .= "<div class=picture>";
+  $block['content'] .= $variables['user_picture'];
+  //$block['content'] .= "</div>";
+
+  // Show Username? Trim long usernames
+   $userlen=variable_get('user_picture_userlen', 10);
+   $userdisp=$user->name;
+   if (strlen($user->name) > $userlen) {
+     $userdisp=substr($user->name, 0, $userlen) . '..';
+   }
+   if (variable_get('user_block_showuser','1')=='1') {
+     $block['content'] .='<div class="user-info"><h3>' .l($userdisp, "user/$user->uid" ) . "</h3>";
+   }
+   user_build_content($user);
+ $content=$user->content;
+  if (isset($content['first_name']) || isset($content['last_name'])){
+      $block['content'] .= "<div class=userlevel>" . $content['first_name'][0]['#markup'] .' '. $content['last_name'][0]['#markup']. "</div>";
+  }
+  if (isset($content['research_fields'])) {
+      $block['content'] .= "<div class=userlevel>" . $content['research_fields'][0]['#markup'] . "</div>";
+  }
+  if (isset($content['position'])||isset($content['institution'])) {
+      $block['content'] .= "<div class=userlevel>" . $content['position'][0]['#markup'];
+      if(isset($content['position'])&& isset($content['institution'])){
+      	$block['content'] .= ', ';
+      }
+      $block['content'] .= $content['institution'][0]['#markup'] . "</div>";
+  }
+  if (isset($content['country'])) {
+      $block['content'] .= "<div class=userlevel>" . $content['country'][0]['#markup'] . "</div>";
+  }
+  if (isset($content['website'])) {
+      $block['content'] .= '<div class=userlevel>' . $content['website'][0]['#markup'] . "</div>";
+  }
+
+
+  $block['content'] .= "</div></div>"; // class=$_moduleName_
+  return $block;
+}
+

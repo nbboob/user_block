@@ -1,0 +1,27 @@
+.user_block {
+  height: 90px;
+  margin-top: 0px;
+}
+*+html .user_block {  /* IE7 */
+  margin-top: 10px;
+}
+* html .user_block {  /* IE6 */
+  margin-top: 10px;
+}
+.user_block h3 { 
+  margin-top: 0em;
+  margin-bottom: 0em;
+}
+.user_block img { 
+  margin:5px 5px 0 5px;
+  float:left
+}
+.user_block .user-info{
+	float:left;
+	padding-left:5px
+}
+*+html .user_block h3 { /* IE7 */
+  margin-top: 0.2em;
+}
+
+

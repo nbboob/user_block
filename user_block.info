@@ -1,0 +1,10 @@
+
+
+name = User block
+description = A block with the current user's picture and points details.
+configure = admin/structure/block
+package = "User interface"
+version = "7.x-1.x-dev"
+core = "7.x"
+
+
